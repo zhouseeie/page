@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BanG Dream! 各地群聊地图!</title>
+    <style>
+        /* 基本样式 */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        /* 顶部菜单栏 */
+        .navbar {
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar img {
+            height: 40px;
+        }
+
+        .navbar .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-left: 15px;
+        }
+
+        .navbar .menu {
+            display: flex;
+            gap: 25px;
+        }
+
+        .navbar .menu a {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .navbar .menu a:hover {
+            background-color: #ddd;
+        }
+
+        /* 搜索框样式 */
+        .search-container {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-container input {
+            padding: 10px;
+            font-size: 16px;
+            width: 60%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+
+        .search-container button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .search-container button:hover {
+            background-color: #0056b3;
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f5f5f5;
+        }
+
+        tr.highlight {
+            background-color: #ffeb3b;
+        }
+
+        /* 提示信息 */
+        .message {
+            text-align: center;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            margin-top: 20px;
+            display: none;
+        }
+
+        /* 悬浮窗（Modal）样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4); /* 半透明背景 */
+            overflow: auto;
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .modal-header {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .modal-body {
+            margin-top: 10px;
+            font-size: 18px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 导航栏 -->
+    <div class="navbar">
+        <img src="../img/a1bq1-logo.png" alt="Logo">
+        <div class="title"> <font size="6"> </b>BanG Dream! 各地群聊地图!</b></font></div>
+        <div class="menu">
+            <a href="#" id="option-1">综合群</a>
+            <a href="#" id="option-2">地方群</a>
+            <a href="#" id="option-3">投稿须知</a>
+            <a href="#" id="option-4">关于&捐赠</a>
+        </div>
+    </div>
+
+    <!-- 搜索框 -->
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="搜索数据...">
+        <button id="search-button">搜索</button>
+    </div>
+
+    <!-- 提示信息 -->
+    <div class="message" id="message"></div>
+
+    <!-- 数据表格 -->
+    <table id="data-table">
+        <thead>
+            <tr>
+                <th>序号</th>
+                <th>省份</th>
+                <th>城市</th>
+                <th>群号</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 动态填充数据 -->
+        </tbody>
+    </table>
+
+    <!-- 悬浮窗（Modal） -->
+    <div id="notification-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-modal">&times;</span>
+            <div class="modal-header">投稿须知</div>
+            <div class="modal-body">
+            投稿格式
+                由于前来投稿的群友众多，而该网站及相关图片更新较慢，为防止我忽略相关信息，现在此对投稿格式进行一定的规定：
+            类型（综合/地方），群名，群号 请添加QQ群：636949985以后以这种格式向群主私聊,谢谢！
+            各地群聊分布图相关设定
+                近年来QQ中涌现出一批非常活跃的讨论群组或同好会，但是由于群的数量众多，而图片的排版有限，不能每个群都画在地图上，
+                而人数相对少，或不活跃的群会放在二维码中。现在此公示展现在邦邦地图上面的群的要求
+               【现行要求】
+                群人数超过200人，群较为活跃
+                每个省至少有一个群 
+                                 2025.1.13
+
+
+
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增的悬浮窗内容（关于选项） -->
+    <div id="about-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-about-modal">&times;</span>
+            <div class="modal-header">关于&捐赠</div>
+            <div class="modal-body">
+                本群的相关内容均来自于广大网友投稿，网站及相关地图均由Zhouseeie制作。联系方式在表格置顶或网页底部
+
+
+未来可能考虑吸取捐赠，因为github-page不是很好用，可能需要独立的域名方便访问。本站及相关地图均属于公益性行为，完全中立。
+
+                <img src="none" alt="图片">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 当前加载的JSON数据
+        let currentData = [];
+
+        // 加载数据的函数
+        function loadData(fileName) {
+            fetch(fileName)
+                .then(response => response.json())
+                .then(data => {
+                    currentData = data;
+                    renderTable();
+                    showMessage(`已切换`);
+                })
+                .catch(error => {
+                    console.error("加载数据失败:", error);
+                    showMessage(`加载失败`);
+                });
+        }
+
+        // 渲染表格
+        function renderTable(filteredData = currentData) {
+            const tbody = document.querySelector('#data-table tbody');
+            tbody.innerHTML = '';
+
+            filteredData.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${item.province}</td>
+                    <td>${item.city}</td>
+                    <td>${item.group}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 显示提示信息
+        function showMessage(message) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerText = message;
+            messageDiv.style.display = 'block';
+            setTimeout(() => messageDiv.style.display = 'none', 3000);
+        }
+
+        // 监听菜单选项点击
+        document.getElementById('option-1').addEventListener('click', () => loadData('../resources/a1bq1-data1.json'));
+        document.getElementById('option-2').addEventListener('click', () => loadData('../resources/a1bq1-data2.json'));
+        document.getElementById('option-3').addEventListener('click', () => showModal());
+        document.getElementById('option-4').addEventListener('click', () => showAboutModal());
+
+        // 搜索功能
+        document.getElementById('search-button').addEventListener('click', () => {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const filteredData = currentData.filter(item => {
+                return item.province.toLowerCase().includes(searchTerm) || 
+                       item.city.toLowerCase().includes(searchTerm) || 
+                       item.group.toLowerCase().includes(searchTerm);
+            });
+
+            // 渲染过滤后的数据
+            renderTable(filteredData);
+
+            // 高亮匹配的行
+            const rows = document.querySelectorAll('#data-table tbody tr');
+            rows.forEach(row => {
+                row.classList.remove('highlight');
+                const cells = row.querySelectorAll('td');
+                cells.forEach(cell => {
+                    if (cell.textContent.toLowerCase().includes(searchTerm)) {
+                        row.classList.add('highlight');
+                    }
+                });
+            });
+        });
+
+        // 显示悬浮窗
+        function showModal() {
+            const modal = document.getElementById("notification-modal");
+            modal.style.display = "block";
+        }
+
+        // 关闭悬浮窗
+        document.getElementById("close-modal").addEventListener("click", () => {
+            const modal = document.getElementById("notification-modal");
+            modal.style.display = "none";
+        });
+
+        // 显示关于弹窗
+        function showAboutModal() {
+            const aboutModal = document.getElementById("about-modal");
+            aboutModal.style.display = "block";
+        }
+
+           // 关闭关于弹窗
+           document.getElementById("close-about-modal").addEventListener("click", () => {
+            const aboutModal = document.getElementById("about-modal");
+            aboutModal.style.display = "none";
+        });
+
+        // 点击悬浮窗外区域时关闭悬浮窗
+        window.onclick = function(event) {
+            const modal = document.getElementById("notification-modal");
+            const aboutModal = document.getElementById("about-modal");
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // 初始加载默认的data.json
+        loadData('../resources/a1bq1-data2.json');
+    </script>
+
+<footer>
+    <p>&copy;  2025 Zhouseeie  联系方式：zkylin.ru@qq.com QQ群聊：636949985 欢迎投稿！</p>
+</footer>
+
+</body>
+</html>
