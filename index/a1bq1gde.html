@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>群组地图</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+
+        .info-window {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'PingFang SC', Arial, sans-serif;
+            max-width: 320px;
+        }
+
+        .info-window h3 {
+            margin: 0 0 15px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .info-window .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 6px 0;
+            font-size: 14px;
+        }
+
+        #controls,
+        #title-container, 
+        #legend {
+            position: absolute;
+            z-index: 1000;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+        }
+
+        #controls {
+            top: 10px;
+            left: 10px;
+            width: 220px;
+            padding: 15px;
+        }
+
+        #title-container {
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #title {
+            background: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-family: 'PingFang SC', Arial, sans-serif;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        #legend {
+            bottom: 10px;
+            right: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 8px;
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="title-container">
+    <a id="title" href="https://www.bing.com" target="_blank"> BanG Dream! 群组地图  </a>
+        <select id="dataset-selector"></select>
+        <select id="map-source-selector">
+            <option value="gaode">高德地图</option>
+            <option value="openstreetmap">OpenStreetMap</option>
+        </select>
+    </div>
+    <div id="controls">
+        <label for="search-input">搜索省份</label>
+        <input type="text" id="search-input" class="w-full p-1 border rounded" placeholder="输入省份名称" />
+        <button onclick="searchProvince()" class="w-full mt-2 bg-blue-500 text-white p-1 rounded">搜索</button>
+        <label for="filter-type" class="mt-3 block">其他搜索类型</label>
+        <select id="filter-type" class="w-full p-1 border rounded">
+            <option value="city">按城市</option>
+            <option value="group">按群号</option>
+        </select>
+        <input type="text" id="filter-input" class="w-full p-1 border rounded mt-1" placeholder="请搜索" />
+        <button onclick="applyFilter()" class="w-full mt-2 bg-green-500 text-white p-1 rounded">搜索</button>
+    </div>
+    <div id="legend">
+        <div class="legend-item"><span class="legend-color" style="background-color: #ffffff;"></span>数量: 0</div>
+        <div class="legend-item"><span class="legend-color" style="background-color: #22c55e;"></span>数量: 1</div>
+        <div class="legend-item"><span class="legend-color" style="background-color: #f97316;"></span>数量: 2-3</div>
+        <div class="legend-item"><span class="legend-color" style="background-color: #b91c1c;"></span>数量: >3</div>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const provincePoints = [
+           { "province": "北京市", "lat": 39.9042, "lng": 116.4074 },
+            { "province": "上海市", "lat": 31.2304, "lng": 121.4737 },
+            { "province": "广东省", "lat": 23.1291, "lng": 113.2644 },
+            { "province": "四川省", "lat": 30.5728, "lng": 104.0668 },
+            { "province": "天津市", "lat": 39.0851, "lng": 117.1993 },
+            { "province": "重庆市", "lat": 29.5637, "lng": 106.5516 },
+            { "province": "河北省", "lat": 38.0428, "lng": 114.5149 },
+            { "province": "山西省", "lat": 37.8735, "lng": 112.5627 },
+            { "province": "内蒙古自治区", "lat": 40.8174, "lng": 111.7656 },
+            { "province": "辽宁省", "lat": 41.8057, "lng": 123.4315 },
+            { "province": "吉林省", "lat": 43.8965, "lng": 125.3260 },
+            { "province": "黑龙江省", "lat": 45.7421, "lng": 126.6617 },
+            { "province": "江苏省", "lat": 32.0603, "lng": 118.7969 },
+            { "province": "浙江省", "lat": 30.2672, "lng": 120.1528 },
+            { "province": "安徽省", "lat": 31.8612, "lng": 117.2830 },
+            { "province": "福建省", "lat": 26.1008, "lng": 119.2965 },
+            { "province": "江西省", "lat": 28.6765, "lng": 115.8922 },
+            { "province": "山东省", "lat": 36.6683, "lng": 117.0200 },
+            { "province": "河南省", "lat": 34.7570, "lng": 113.6654 },
+            { "province": "湖北省", "lat": 30.5844, "lng": 114.2986 },
+            { "province": "湖南省", "lat": 28.1941, "lng": 112.9823 },
+            { "province": "广西壮族自治区", "lat": 22.8167, "lng": 108.3661 },
+            { "province": "海南省", "lat": 20.0442, "lng": 110.1999 },
+            { "province": "贵州省", "lat": 26.5982, "lng": 106.7074 },
+            { "province": "云南省", "lat": 25.0458, "lng": 102.7100 },
+            { "province": "西藏自治区", "lat": 29.6475, "lng": 91.1172 },
+            { "province": "陕西省", "lat": 34.2658, "lng": 108.9542 },
+            { "province": "甘肃省", "lat": 36.0591, "lng": 103.8263 },
+            { "province": "青海省", "lat": 36.6209, "lng": 101.7801 },
+            { "province": "宁夏回族自治区", "lat": 38.4680, "lng": 106.2731 },
+            { "province": "新疆维吾尔自治区", "lat": 43.7930, "lng": 87.6277 },
+            { "province": "香港特别行政区", "lat": 22.3193, "lng": 114.1694 },
+            { "province": "澳门特别行政区", "lat": 22.1987, "lng": 113.5439 },
+            { "province": "台湾省", "lat": 25.0330, "lng": 121.5654 },
+            { "province": "亚洲", "lat": 34.0479, "lng": 100.6197 },
+            { "province": "非洲", "lat": 7.1881, "lng": 21.0938 },
+            { "province": "北美洲", "lat": 54.5260, "lng": -105.2551 },
+            { "province": "南美洲", "lat": -8.7832, "lng": -55.4915 },
+            { "province": "欧洲", "lat": 54.5260, "lng": 15.2551 },
+            { "province": "大洋洲", "lat": -25.2744, "lng": 133.7751 },
+            { "province": "南极洲", "lat": -82.8628, "lng": 135.0000 },
+            { "province": "美国", "lat": 38.9072, "lng": -77.0369 },
+            { "province": "日本", "lat": 35.6762, "lng": 139.6503 },
+            { "province": "英国", "lat": 51.5074, "lng": -0.1278 },
+            { "province": "法国", "lat": 48.8566, "lng": 2.3522 },
+            { "province": "德国", "lat": 52.5200, "lng": 13.4050 },
+            { "province": "俄罗斯", "lat": 55.7558, "lng": 37.6173 },
+            { "province": "巴西", "lat": -15.8267, "lng": -47.9218 },
+            { "province": "印度", "lat": 28.7041, "lng": 77.1025 },
+            { "province": "澳大利亚", "lat": -35.2809, "lng": 149.1300 },
+            { "province": "加拿大", "lat": 45.4215, "lng": -75.6972 },
+            { "province": "南非", "lat": -25.7479, "lng": 28.2293 },
+            { "province": "韩国", "lat": 37.5665, "lng": 126.9780 },
+            { "province": "意大利", "lat": 41.9028, "lng": 12.4964 },
+            { "province": "西班牙", "lat": 40.4168, "lng": -3.7038 },
+            { "province": "墨西哥", "lat": 19.4326, "lng": -99.1332 }
+        ];
+
+        let map, currentMarkers = [], allData = [];
+
+        const tileLayers = {
+            gaode: L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}&key=63dd4fbdc9ef57c5dd0f3d67033b404c', {
+                subdomains: ['1', '2', '3', '4'],
+                attribution: '高德地图'
+            }),
+            openstreetmap: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            })
+        };
+
+        function initMap() {
+            map = L.map('map', {
+                center: [35.8617, 104.1954],
+                zoom: 5,
+                layers: [tileLayers.gaode]
+            });
+        }
+
+        function getMarkerColor(count) {
+            if (count > 3) return '#b91c1c';
+            if (count > 1) return '#f97316';
+            if (count === 1) return '#22c55e';
+            return '#ffffff';
+        }
+
+        function createMarkers(data) {
+            currentMarkers.forEach(m => map.removeLayer(m));
+            currentMarkers = [];
+
+            provincePoints.forEach(p => {
+                const matched = data.filter(d => d.province === p.province);
+                const count = matched.length;
+                const color = getMarkerColor(count);
+
+                const marker = L.circleMarker([p.lat, p.lng], {
+                    radius: 8,
+                    fillColor: color,
+                    color: '#000',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map);
+
+                marker.bindPopup(`<div class='info-window'><h3>${p.province}</h3>${matched.map(d => `<div class='data-row'><span>${d.city}</span><span>${d.group}</span></div>`).join('')}</div>`);
+                currentMarkers.push(marker);
+            });
+        }
+
+        function loadData(dataset) {
+            fetch(`/resources/a1bq1-${dataset}.json`).then(res => res.json()).then(data => {
+                allData = data;
+                createMarkers(data);
+            });
+        }
+
+        function handleMapSwitch() {
+            const selected = document.getElementById('map-source-selector').value;
+            Object.values(tileLayers).forEach(layer => map.removeLayer(layer));
+            tileLayers[selected].addTo(map);
+        }
+
+        function handleDatasetSwitch() {
+            const ds = document.getElementById('dataset-selector').value;
+            document.getElementById('title').textContent = `BanG Dream! 群组地图 `;
+            loadData(ds);
+        }
+
+        function searchProvince() {
+            const query = document.getElementById('search-input').value.trim();
+            const p = provincePoints.find(x => x.province === query);
+            if (p) map.setView([p.lat, p.lng], 8);
+        }
+
+        function applyFilter() {
+            const type = document.getElementById('filter-type').value;
+            const val = document.getElementById('filter-input').value.trim().toLowerCase();
+            const filtered = allData.filter(d => d[type].toLowerCase().includes(val));
+            createMarkers(filtered);
+        }
+
+        window.onload = () => {
+            initMap();
+            document.getElementById('dataset-selector').innerHTML = `<option value="data2">地区群</option><option value="data3">待开发</option>`;
+            document.getElementById('dataset-selector').value = 'data2';
+            document.getElementById('dataset-selector').onchange = handleDatasetSwitch;
+            document.getElementById('map-source-selector').onchange = handleMapSwitch;
+            loadData('data2');
+        };
+    </script>
+</body>
+
+</html>
