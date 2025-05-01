@@ -233,7 +233,7 @@
         }
 
         function loadData(dataset) {
-            fetch(`/resources/a1bq1-${dataset}.json`).then(res => res.json()).then(data => {
+            fetch(`./resources/a1bq1-${dataset}.json`).then(res => res.json()).then(data => {
                 allData = data;
                 createMarkers(data);
             });
