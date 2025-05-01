@@ -233,6 +233,7 @@
         }
 
         function loadData(dataset) {
+            // 本地测试时可以修改为/resources方便测试 github静态网站对路径要求较高，所以对此做出修改
             fetch(`../resources/a1bq1-${dataset}.json`).then(res => res.json()).then(data => {
                 allData = data;
                 createMarkers(data);
