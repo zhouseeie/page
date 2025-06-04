@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全国各地BanG Dream同好会地图</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+
+        #map-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 1200px;
+            max-height: 800px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #map-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .marker {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            transform: translate(-50%, -50%);
+            border: 2px solid #fff;
+        }
+
+        .info-box {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            max-width: 300px;
+            font-family: Arial, sans-serif;
+            display: none;
+        }
+
+        .info-box h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+        }
+
+        .info-box p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 240px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .legend div {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 10px;
+            display: inline-block;
+        }
+
+        .index-button {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .index-button a {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: #FF3B72;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .index-button a:hover {
+            background-color: #d12858;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map-container">
+        <img id="map-image" src="../img/a1bq1gdp-map.png" alt="中国地图">
+        <div id="legend" class="legend">
+            <div><span class="legend-color" style="background-color: #b91c1c;"></span>群数量  5以上</div>
+            <div><span class="legend-color" style="background-color: #f97316;"></span>群数量 3-5</div>
+            <div><span class="legend-color" style="background-color: #22c55e;"></span>群数量 1-2</div>
+            <div><span class="legend-color" style="background-color: #ffffff;"></span>群数量 0</div>
+            <div class="index-button">
+                <a href="a1bq1.html" target="_blank">回到主页</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 省份坐标（x, y）基于图片的百分比位置
+        const provinceCoordinates = {
+            "北京市": { "x": 70.0, "y": 46.0 },
+            "天津市": { "x": 71.9, "y": 48.6 },
+            "上海市": { "x": 77.3, "y": 67.3 },
+            "重庆市": { "x": 58.2, "y": 70.3 },
+            "香港特别行政区": { "x": 67.2, "y": 86.3 },
+            "澳门特别行政区": { "x": 66.6, "y": 86.8 },
+            "台湾省": { "x": 76.1, "y": 83.6 },
+            "黑龙江省": { "x": 86.3, "y": 31.3 },
+            "吉林省": { "x": 83.0, "y": 38.0 },
+            "辽宁省": { "x": 79.2, "y": 44.0 },
+            "内蒙古自治区": { "x": 63.7, "y": 42.7 },
+            "河北省": { "x": 68.8, "y": 49.7 },
+            "山西省": { "x": 65.1, "y": 51.3 },
+            "陕西省": { "x": 61.5, "y": 60.0 },
+            "甘肃省": { "x": 53.3, "y": 54.3 },
+            "宁夏自治区": { "x": 56.8, "y": 52.3 },
+            "青海省": { "x": 47.4, "y": 55.3 },
+            "山东省": { "x": 73.5, "y": 55.0 },
+            "河南省": { "x": 66.9, "y": 59.3 },
+            "江苏省": { "x": 75.9, "y": 63.3 },
+            "安徽省": { "x": 71.6, "y": 65.3 },
+            "湖北省": { "x": 64.8, "y": 67.0 },
+            "浙江省": { "x": 75.7, "y": 72.0 },
+            "福建省": { "x": 72.8, "y": 77.7 },
+            "江西省": { "x": 69.0, "y": 73.6 },
+            "湖南省": { "x": 65.3, "y": 74.6 },
+            "贵州省": { "x": 58.2, "y": 76.3 },
+            "四川省": { "x": 53.5, "y": 68.6 },
+            "云南省": { "x": 50.5, "y": 81.7 },
+            "广西壮族自治区": { "x": 60.6, "y": 84.0 },
+            "广东省": { "x": 66.7, "y": 84.6 },
+            "海南省": { "x": 61.8, "y": 94.3 },
+            "新疆维吾尔自治区": { "x": 31.4, "y": 33.6 },
+            "西藏自治区": { "x": 34.9, "y": 70.0 },
+        };
+
+        // 数据存储
+        let data = [];
+
+        // 根据数据量返回标记颜色
+        function getMarkerColor(dataCount) {
+            if (dataCount > 5) return "#b91c1c";
+            if (dataCount >= 3) return "#f97316";
+            if (dataCount >= 1) return "#22c55e";
+            return "#ffffff";
+        }
+
+        // 计算每个省份的数据量
+        function getProvinceDataCount(province) {
+            return data.filter(item => item.province === province).length;
+        }
+
+        // 创建标记点
+        function createMarkers() {
+            const container = document.getElementById('map-container');
+            const mapImage = document.getElementById('map-image');
+            // 清空现有标记点
+            document.querySelectorAll('.marker').forEach(marker => marker.remove());
+
+            mapImage.addEventListener('load', () => {
+                Object.keys(provinceCoordinates).forEach(province => {
+                    const coords = provinceCoordinates[province];
+                    const marker = document.createElement('div');
+                    marker.className = 'marker';
+                    marker.style.left = `${coords.x}%`;
+                    marker.style.top = `${coords.y}%`;
+                    const dataCount = getProvinceDataCount(province);
+                    marker.style.backgroundColor = getMarkerColor(dataCount);
+                    marker.addEventListener('click', () => showInfoBox(province, coords));
+                    container.appendChild(marker);
+                });
+            });
+            // 如果图片已加载，立即触发
+            if (mapImage.complete) {
+                mapImage.dispatchEvent(new Event('load'));
+            }
+        }
+
+        // 显示信息框
+        function showInfoBox(province, coords) {
+            let infoBox = document.getElementById('info-box');
+            if (infoBox) infoBox.remove();
+
+            infoBox = document.createElement('div');
+            infoBox.id = 'info-box';
+            infoBox.className = 'info-box';
+            infoBox.style.left = `${coords.x}%`;
+            infoBox.style.top = `${coords.y - 30 }%`;
+            infoBox.style.display = 'block';
+
+            const provinceData = data.filter(item => item.province === province);
+            let content = `<h3>${province}</h3>`;
+            if (provinceData.length === 0) {
+                content += '<p>暂无数据</p>';
+            } else {
+                provinceData.forEach(item => {
+                    content += `<p>城市: ${item.city}, 群号: ${item.group}</p>`;
+                });
+            }
+            infoBox.innerHTML = content;
+            document.getElementById('map-container').appendChild(infoBox);
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 加载 JSON 数据
+            fetch('../resources/a1bq1-data2.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`无法加载 JSON 文件: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(jsonData => {
+                    data = jsonData;
+                    createMarkers();
+                })
+                .catch(error => {
+                    console.error('加载 JSON 文件失败:', error);
+                    alert('无法加载数据文件，请检查文件路径或格式。');
+                });
+        });
+    </script>
+</body>
+
+</html>
